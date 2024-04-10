@@ -48,12 +48,25 @@ module.exports = async function (io) {
       console.log(`User ${data.userId} connected`);
 
       connectedUsers[data.userId] = socket.id;
-      console.log(connectedUsers);
+
+      socket.broadcast.emit("user-online", {
+        userId: data.userId,
+      });
     });
+    //disconnect
+    socket.on("user-disconnected", (data) => {
+      delete connectedUsers[data.userId];
+      console.log("user disconnected " + data.userId);
+      socket.broadcast.emit("user-offline", { userId: data.userId });
+    });
+
     socket.on("typing", (data) => {
+      const receiverSocketId = connectedUsers[data.receiverId];
+      console.log(receiverSocketId);
       io.to(receiverSocketId).emit("user-typing", {
         typing: data.typing,
       });
     });
+    socket.on("accept-friend", async (data) => {});
   });
 };

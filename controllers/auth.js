@@ -48,7 +48,7 @@ exports.login = async (req, res, next) => {
         userId: user._id.toString(),
       },
       "somesupersecret",
-      { expiresIn: "1h" }
+      { expiresIn: "5h" }
     );
     res
       .status(200)

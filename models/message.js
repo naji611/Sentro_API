@@ -19,7 +19,12 @@ const messageSchema = new Schema(
       ref: "Conversation",
       type: Schema.Types.ObjectId,
     },
+    // messageRead: {
+    //   type: Boolean,
+    //   required: true,
+    // },
   },
+
   { timestamps: true }
 );
 module.exports = mongoose.model("Message", messageSchema);

@@ -63,7 +63,11 @@ exports.findFriend = async (req, res, next) => {
     }
 
     // If everything is fine, return the found users
-    return res.status(200).json(users);
+    const finalUsers = users
+      .filter((user) => user.id !== req.userId)
+      .slice(0, 10);
+
+    return res.status(200).json(finalUsers);
   } catch (error) {
     console.error("Error finding friend:", error);
     res.status(500).json({ message: "Internal server error." });
