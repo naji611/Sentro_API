@@ -3,35 +3,37 @@ const User = require("../models/user");
 const mongoose = require("mongoose");
 const Message = require("../models/message");
 const Conversation = require("../models/conversation");
+
 exports.homePage = async (req, res, next) => {};
 
 exports.getFriends = async (req, res, next) => {
   let userId = req.userId;
   try {
     const user = await User.findById(userId).populate({
-      path: "friends",
-      select: "name email _id", // Select the fields you want to retrieve
+      path: "friends.friendId",
+      select: "name email _id",
     });
-
     if (user) {
-      // Map over the populated friends array to extract only necessary fields
       const friends = user.friends.map((friend) => ({
-        name: friend.name,
-        email: friend.email,
-        id: friend._id,
+        name: friend.friendId.name,
+        email: friend.friendId.email,
+        id: friend.friendId._id,
+        notifications: friend.notifications,
       }));
 
-      const user_R = await User.findById(userId).populate({
+      const user_Requests = await User.findById(userId).populate({
         path: "friendRequestsReceived",
         select: "name email _id", // Select the fields you want to retrieve
       });
-      if (user_R) {
+      if (user_Requests) {
         // Map over the populated friendRequestsReceived array to extract only necessary fields
-        const requests = user_R.friendRequestsReceived.map((request) => ({
-          name: request.name,
-          email: request.email,
-          id: request._id,
-        }));
+        const requests = user_Requests.friendRequestsReceived.map(
+          (request) => ({
+            name: request.name,
+            email: request.email,
+            id: request._id,
+          })
+        );
         res.status(200).json({ friends: friends, requests: requests });
       } else {
         res.status(404).json({ message: "User not found" });
@@ -90,7 +92,9 @@ exports.addFriend = async (req, res, next) => {
     }
 
     // Check if the user is already friends with the friend
-    const isAlreadyFriend = user.friends.includes(friendId);
+    const isAlreadyFriend = user.friends.some((friend) =>
+      friend.friendId.equals(friendId)
+    );
     if (isAlreadyFriend) {
       return res
         .status(400)
@@ -126,18 +130,19 @@ exports.acceptFriend = async (req, res, next) => {
 
   const index = user.friendRequestsReceived.indexOf(friendId);
 
-  console.log(user.friendRequestsReceived);
-  console.log(user.email);
+  //console.log(user.friendRequestsReceived);
+  //console.log(user.email);
   if (index == -1) {
     return res
       .status(400)
       .json({ message: "No friend requests from this user" });
   } else {
-    user.friends.push(friendId);
+    user.friends.push({ friendId: friendId, notifications: 0 });
+
     user.friendRequestsReceived.splice(index, 1);
     await user.save();
     const friend = await User.findById(friendId);
-    friend.friends.push(req.userId);
+    friend.friends.push({ friendId: req.userId, notifications: 0 });
     await friend.save();
     const newConversation = new Conversation({
       participants: [
@@ -189,7 +194,17 @@ exports.getConversation = async (req, res, next) => {
       return res.status(400).json({ error: "Invalid userId or friendId" });
     }
 
-    // Find conversation between user and friend in Conversation model
+    const user = await User.findById(userId);
+    const friendIndex = user.friends.findIndex(
+      (friend) => friend.friendId.toString() === friendId
+    );
+
+    if (friendIndex !== -1) {
+      user.friends[friendIndex].notifications = 0;
+
+      await user.save();
+    }
+
     const conversation = await Conversation.findOne({
       participants: { $all: [userId, friendId] },
     });
@@ -204,7 +219,12 @@ exports.getConversation = async (req, res, next) => {
       conversationId: conversation._id,
     }).sort({ createdAt: 1 });
 
-    return res.status(200).json({ messages: messages });
+    return res
+      .status(200)
+      .json({
+        messages: messages,
+        notifications: user.friends[friendIndex].notifications,
+      });
   } catch (err) {
     console.error("Error fetching conversation:", err);
     return res.status(500).json({ error: "Internal server error" });

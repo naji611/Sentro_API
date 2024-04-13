@@ -14,7 +14,15 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
-  friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
+  friends: [
+    {
+      friendId: { type: Schema.Types.ObjectId, ref: "User" },
+      notifications: {
+        type: Number,
+        default: 0,
+      },
+    },
+  ],
   friendRequestsSent: [{ type: Schema.Types.ObjectId, ref: "User" }],
   friendRequestsReceived: [{ type: Schema.Types.ObjectId, ref: "User" }],
 });

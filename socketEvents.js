@@ -9,19 +9,29 @@ module.exports = async function (io) {
 
     socket.on("sent-message", async (data) => {
       // console.log(data);
-      console.log(data);
+
       const conversation =
         await conversationController.createOrRetrieveConversation(
           data.senderId,
           data.receiverId
         );
+      const user = await User.findById(data.receiverId);
 
       const receiverId = data.receiverId;
       const date = data.date;
       const senderId = data.senderId;
       const message = data.message;
-      const receiverSocketId = connectedUsers[receiverId];
 
+      const friendIndex = user.friends.findIndex((friend) => {
+        return friend.friendId.toString() === senderId;
+      });
+      if (friendIndex !== -1) {
+        user.friends[friendIndex].notifications += 1;
+        await user.save();
+      } else {
+        console.error("Friend not found.");
+      }
+      const receiverSocketId = connectedUsers[receiverId];
       io.to(receiverSocketId).emit("new-message", {
         content: message,
         createdAt: date,
@@ -31,6 +41,7 @@ module.exports = async function (io) {
         content: message,
         senderId: senderId,
         conversationId: conversation._id,
+        isRead: false,
       });
       await ms.save();
       const newMessage = {
@@ -67,6 +78,11 @@ module.exports = async function (io) {
         typing: data.typing,
       });
     });
-    socket.on("accept-friend", async (data) => {});
+    socket.on("accept-friend", async (data) => {
+      const receiverSocketId = connectedUsers[data.receiverId];
+      io.to(receiverSocketId).emit("new-friend-request", {
+        requesterId: data.requesterId,
+      });
+    });
   });
 };

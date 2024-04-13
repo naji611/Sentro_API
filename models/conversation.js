@@ -9,9 +9,5 @@ const conversationSchema = new Schema({
       senderId: { type: Schema.Types.ObjectId, ref: "User" },
     },
   ],
-  // notifications: {
-  //   type: Number,
-  //   required: true,
-  // },
 });
 module.exports = mongoose.model("Conversation", conversationSchema);

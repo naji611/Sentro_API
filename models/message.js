@@ -10,19 +10,15 @@ const messageSchema = new Schema(
       type: String,
       required: true,
     },
-    // messageStatus: {
-    //   type: Boolean,
-    //   required: true,
-    //   default: false, //false means the message is not read yet
-    //  },
+   
     conversationId: {
       ref: "Conversation",
       type: Schema.Types.ObjectId,
     },
-    // messageRead: {
-    //   type: Boolean,
-    //   required: true,
-    // },
+    isRead: {
+      type: Boolean,
+      required: true,
+    },
   },
 
   { timestamps: true }
