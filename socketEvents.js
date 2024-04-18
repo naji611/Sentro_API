@@ -76,6 +76,8 @@ module.exports = async function (io) {
       console.log(receiverSocketId);
       io.to(receiverSocketId).emit("user-typing", {
         typing: data.typing,
+        senderId: data.senderId,
+        receiverId: data.receiverId,
       });
     });
     socket.on("accept-friend", async (data) => {
