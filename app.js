@@ -37,5 +37,5 @@ app.use((err, req, res, next) => {
   res.status(status).json({ message: message, data: data });
 });
 mongoose.connect(
-  "mongodb+srv:/*************@sentro.dj8jbni.mongodb.net/?retryWrites=true&w=majority&appName=Sentro"
+  "mongodb+srv:/*************"
 );
